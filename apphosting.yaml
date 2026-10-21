@@ -1,0 +1,23 @@
+# ==============================================================================
+# Firebase App Hosting Configuration for LeadRescue
+# Official Next.js SSR & Server Actions deployment schema
+# ==============================================================================
+
+runConfig:
+  minInstances: 1
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: NODE_ENV
+    value: production
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://leadrescue.web.app
+
+# Sensitive secrets managed via Google Cloud Secret Manager / Firebase CLI:
+# firebase apphosting:secrets:set SUPABASE_SERVICE_ROLE_KEY
+# firebase apphosting:secrets:set STRIPE_SECRET_KEY
+# firebase apphosting:secrets:set STRIPE_WEBHOOK_SECRET
+# firebase apphosting:secrets:set RESEND_API_KEY

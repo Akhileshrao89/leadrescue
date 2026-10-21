@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LeadRescue
 
-## Getting Started
+> High-velocity, multi-tenant lead management and follow-up engine tailored for digital agencies (Web Design, SEO, Lead Gen).
 
-First, run the development server:
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript (Strict Mode)
+- **Styling**: Tailwind CSS
+- **Data & Auth**: Supabase PostgreSQL + Supabase Auth (with Row Level Security)
+- **Form & Validation**: Zod + React Hook Form
+- **Testing**: Vitest
+- **Code Quality**: ESLint + Prettier
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+
+- **Node.js**: `v20.x` or later (tested on v23)
+- **npm**: `v10.x` or later
+- A Supabase account / project or local Supabase CLI
+
+### 2. Setup Environment Variables
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in your Supabase project credentials (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`).
+
+### 3. Install Dependencies
+
+```bash
+npm install
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧪 Available Scripts
 
-## Learn More
+| Script                 | Purpose                                        |
+| :--------------------- | :--------------------------------------------- |
+| `npm run dev`          | Starts local Next.js development server        |
+| `npm run build`        | Compiles production build                      |
+| `npm run start`        | Runs compiled production build                 |
+| `npm run lint`         | Runs ESLint                                    |
+| `npm run typecheck`    | Validates TypeScript types across the codebase |
+| `npm run test`         | Runs unit tests with Vitest                    |
+| `npm run format`       | Auto-formats code with Prettier                |
+| `npm run format:check` | Verifies code formatting compliance            |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔒 Security Principles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Strict Multi-Tenancy**: Every agency resource (leads, activities, imports, reminders) belongs to a workspace (`workspace_id`).
+2. **Defense-in-Depth**: Authorization checks are performed both at the application/API layer and enforced via PostgreSQL Row Level Security (RLS).
+3. **No Credential Leaks**: Privileged database keys (`SUPABASE_SERVICE_ROLE_KEY`) are server-only and excluded from client bundles.
+4. **Zero Untrusted Input**: Strict Zod schemas guard all route handlers, actions, and background jobs.
