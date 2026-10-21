@@ -24,7 +24,7 @@ export function PublicHeader() {
           <Link href="/signup">
             <Button size="sm">Get Started</Button>
           </Link>
-          <Link href="/dashboard">
+          <Link href="/demo">
             <Button
               variant="outline"
               size="sm"

@@ -71,11 +71,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /dashboard routes
-  if (pathname.startsWith("/dashboard") && !user) {
+  const isDemoSession =
+    request.cookies.get("leadrescue_demo")?.value === "true";
+
+  // Protect /dashboard routes for unauthenticated users (unless visiting in demo session)
+  if (pathname.startsWith("/dashboard") && !user && !isDemoSession) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("returnUrl", pathname);
+    // Sanitize returnUrl to prevent open redirects
+    const cleanReturnUrl =
+      pathname.startsWith("/") &&
+      !pathname.startsWith("//") &&
+      !pathname.startsWith("/\\") &&
+      !pathname.includes(":")
+        ? pathname
+        : "/dashboard";
+    redirectUrl.searchParams.set("returnUrl", cleanReturnUrl);
     const response = NextResponse.redirect(redirectUrl);
     applySecurityHeaders(response.headers);
     return response;

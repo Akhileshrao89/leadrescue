@@ -37,7 +37,7 @@ export const PLANS: Record<SubscriptionTier, PlanDefinition> = {
     tier: "STARTER",
     name: "Starter Tier",
     tagline: "Ideal for growing boutique web design & SEO agencies",
-    priceMonthly: 49,
+    priceMonthly: 29,
     stripePriceId:
       process.env.STRIPE_STARTER_PRICE_ID || "price_starter_monthly",
     maxActiveLeads: 500,
@@ -56,7 +56,7 @@ export const PLANS: Record<SubscriptionTier, PlanDefinition> = {
     tier: "AGENCY",
     name: "Agency Tier",
     tagline: "High-volume follow-up powerhouse for multi-agent agencies",
-    priceMonthly: 149,
+    priceMonthly: 79,
     stripePriceId: process.env.STRIPE_AGENCY_PRICE_ID || "price_agency_monthly",
     maxActiveLeads: 2500,
     maxMembers: 15,

@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
+import { sanitizeReturnUrl } from "@/features/auth/utils";
 
 const SignInSchema = z.object({
   email: z.string().trim().email("Please provide a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const SignUpSchema = z.object({
@@ -31,12 +32,30 @@ describe("Authentication Validation Schemas", () => {
       expect(res.success).toBe(false);
     });
 
-    it("rejects passwords shorter than 6 characters", () => {
+    it("rejects passwords shorter than 8 characters", () => {
       const res = SignInSchema.safeParse({
         email: "agency@example.com",
-        password: "123",
+        password: "short12",
       });
       expect(res.success).toBe(false);
+    });
+  });
+
+  describe("Open Redirect Protection (sanitizeReturnUrl)", () => {
+    it("permits safe local relative paths", () => {
+      expect(sanitizeReturnUrl("/dashboard")).toBe("/dashboard");
+      expect(sanitizeReturnUrl("/dashboard/leads/lead-123")).toBe(
+        "/dashboard/leads/lead-123",
+      );
+    });
+
+    it("rejects protocol-relative and scheme open redirects", () => {
+      expect(sanitizeReturnUrl("//evil.com")).toBe("/dashboard");
+      expect(sanitizeReturnUrl("/\\evil.com")).toBe("/dashboard");
+      expect(sanitizeReturnUrl("https://evil.com")).toBe("/dashboard");
+      expect(sanitizeReturnUrl("javascript:alert(1)")).toBe("/dashboard");
+      expect(sanitizeReturnUrl(null)).toBe("/dashboard");
+      expect(sanitizeReturnUrl(undefined)).toBe("/dashboard");
     });
   });
 

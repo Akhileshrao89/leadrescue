@@ -2,7 +2,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
   // Content Security Policy: Restricts scripts, styles, frames, and connections
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://js.stripe.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",

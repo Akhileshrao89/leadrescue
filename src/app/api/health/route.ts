@@ -164,7 +164,42 @@ export async function performHealthCheck(options?: {
   return { result, httpStatus };
 }
 
-export async function GET() {
+export async function GET(request?: Request) {
+  // If caller provides a valid secret token, return detailed diagnostics.
+  // Otherwise, return a public, safe, edge-cached { status: "ok" } with zero DB queries.
+  const authHeader = request?.headers?.get("Authorization");
+  let tokenParam: string | null = null;
+  try {
+    if (request?.url) {
+      const parsedUrl = new URL(request.url);
+      tokenParam = parsedUrl.searchParams.get("token");
+    }
+  } catch {
+    tokenParam = null;
+  }
+
+  const expectedSecret =
+    process.env.ADMIN_HEALTH_SECRET || process.env.CRON_SECRET;
+  const isAuthorized = expectedSecret
+    ? authHeader === `Bearer ${expectedSecret}` || tokenParam === expectedSecret
+    : false;
+
+  // Unauthenticated public request: return lean response with edge cache, zero database load
+  if (request && !isAuthorized) {
+    const response = NextResponse.json(
+      { status: "ok" },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=5, stale-while-revalidate=15",
+        },
+      },
+    );
+    applySecurityHeaders(response.headers);
+    return response;
+  }
+
+  // Internal / authorized diagnostic health check
   const { result, httpStatus } = await performHealthCheck();
 
   const response = NextResponse.json(result, {

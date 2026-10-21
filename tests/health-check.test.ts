@@ -175,4 +175,16 @@ describe("Phase 12: Health Check Endpoint (/api/health)", () => {
       "private, no-cache, no-store, must-revalidate",
     );
   });
+
+  it("returns lean { status: 'ok' } without internal leaks on public unauthenticated requests", async () => {
+    const publicReq = new Request("https://leadrescue.example.com/api/health");
+    const response = await GET(publicReq);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toContain("public");
+    const body = await response.json();
+    expect(body).toEqual({ status: "ok" });
+    expect(body.checks).toBeUndefined();
+    expect(body.uptimeSeconds).toBeUndefined();
+    expect(body.version).toBeUndefined();
+  });
 });

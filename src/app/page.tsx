@@ -43,7 +43,7 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/dashboard" className="w-full sm:w-auto">
+          <Link href="/demo" className="w-full sm:w-auto">
             <Button size="lg" className="w-full sm:w-auto gap-2">
               <span>Explore Demo Dashboard</span>
               <ArrowRight className="h-4 w-4" />
@@ -145,9 +145,9 @@ export default function LandingPage() {
                 </div>
               </CardContent>
               <div className="p-6 pt-0">
-                <Link href="/dashboard" className="w-full">
+                <Link href="/demo" className="w-full">
                   <Button variant="outline" className="w-full">
-                    Try Free
+                    Try Free Demo
                   </Button>
                 </Link>
               </div>
@@ -233,11 +233,14 @@ export default function LandingPage() {
                 </div>
               </CardContent>
               <div className="p-6 pt-0">
-                <Link href="/signup" className="w-full">
+                <a
+                  href="mailto:akhileshrao1754@gmail.com?subject=LeadRescue%20Agency%20Pro%20Inquiry"
+                  className="w-full"
+                >
                   <Button variant="outline" className="w-full">
                     Contact Sales
                   </Button>
-                </Link>
+                </a>
               </div>
             </Card>
           </div>
@@ -249,7 +252,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 LeadRescue. Built for agency closers.</p>
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="hover:underline">
+            <Link href="/demo" className="hover:underline">
               Demo Dashboard
             </Link>
             <Link href="/login" className="hover:underline">

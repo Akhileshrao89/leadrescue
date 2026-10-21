@@ -45,14 +45,14 @@ Instead of a generic CRM or a passive reminder list, LeadRescue operates as a tr
 
 ## 🛠️ Tech Stack
 
-* **Framework**: Next.js 16.4.2 (Turbopack, App Router, React 19)
-* **Language**: TypeScript 5 (Strict Mode, `noImplicitAny`)
-* **Styling & UI**: Tailwind CSS, Radix UI primitives, Lucide Icons
-* **Database & Auth**: PostgreSQL (Supabase) with RLS + SSR Cookie Auth
-* **Validation**: Zod schema validation on all inputs, CSV rows, and webhook payloads
-* **Email Provider**: Resend API
-* **Testing**: Vitest (40 test files, 267 unit/integration tests)
-* **Code Quality**: ESLint 9 + Prettier
+- **Framework**: Next.js 16.4.2 (Turbopack, App Router, React 19)
+- **Language**: TypeScript 5 (Strict Mode, `noImplicitAny`)
+- **Styling & UI**: Tailwind CSS, Radix UI primitives, Lucide Icons
+- **Database & Auth**: PostgreSQL (Supabase) with RLS + SSR Cookie Auth
+- **Validation**: Zod schema validation on all inputs, CSV rows, and webhook payloads
+- **Email Provider**: Resend API
+- **Testing**: Vitest (40 test files, 267 unit/integration tests)
+- **Code Quality**: ESLint 9 + Prettier
 
 ---
 
@@ -138,22 +138,28 @@ npm run build
 ```
 
 ### End-to-End Test Fixtures
+
 Two realistic agency test datasets are included in `fixtures/`:
-* `fixtures/50-agency-leads.csv`: 50 diverse agency prospects (roofing, dentists, med spas, boutique law firms) with real pipeline stages and objection notes.
-* `fixtures/10-akhi-codes-stalled-leads.csv`: 10 unpolished real client threads (inbound Twitter DMs, unpaid Stripe invoices, scope creep stalls, offshore freelancer price comparisons).
+
+- `fixtures/50-agency-leads.csv`: 50 diverse agency prospects (roofing, dentists, med spas, boutique law firms) with real pipeline stages and objection notes.
+- `fixtures/10-akhi-codes-stalled-leads.csv`: 10 unpolished real client threads (inbound Twitter DMs, unpaid Stripe invoices, scope creep stalls, offshore freelancer price comparisons).
 
 ---
 
 ## 📦 Deployment
 
 ### Firebase App Hosting (Google Cloud)
+
 Configured via `apphosting.yaml`:
+
 ```bash
 firebase deploy
 ```
 
 ### Vercel
+
 Includes `vercel.json` with a 1-minute cron worker calling `/api/cron/outbox`:
+
 ```bash
 vercel --prod
 ```

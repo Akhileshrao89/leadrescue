@@ -4,10 +4,11 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logger } from "@/lib/security/logger";
+import { sanitizeReturnUrl } from "./utils";
 
 const SignInSchema = z.object({
   email: z.string().trim().email("Please provide a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const SignUpSchema = z
@@ -43,6 +44,7 @@ export async function signInAction(
   prevState: AuthActionResult | null,
   formData: FormData,
 ): Promise<AuthActionResult> {
+  const returnUrl = sanitizeReturnUrl(formData.get("returnUrl"));
   const emailOrPhone = formData.get("email")?.toString() || "";
   const password = formData.get("password")?.toString() || "";
 
@@ -64,12 +66,12 @@ export async function signInAction(
   const supabase = await createServerSupabaseClient();
   if (!supabase) {
     if (process.env.NODE_ENV !== "production") {
-      // In local development / demo mode, seamlessly sign in and redirect to dashboard
+      // In local development / demo mode, seamlessly sign in and redirect to returnUrl
       logger.audit({
         event: "AUTH_DEMO_SIGNIN_SUCCESS",
         details: { email: validation.data.email },
       });
-      redirect("/dashboard");
+      redirect(returnUrl);
     }
     return {
       error:
@@ -95,7 +97,7 @@ export async function signInAction(
     details: { email: validation.data.email },
   });
 
-  redirect("/dashboard");
+  redirect(returnUrl);
 }
 
 export async function signUpAction(
@@ -135,7 +137,7 @@ export async function signUpAction(
     if (process.env.NODE_ENV !== "production") {
       // In local development / demo mode, seamlessly sign in and redirect to dashboard
       logger.audit({
-        event: "AUTH_DEMO_SIGNIN_SUCCESS",
+        event: "AUTH_DEMO_SIGNUP_SUCCESS",
         details: { email: validation.data.email },
       });
       redirect("/dashboard");

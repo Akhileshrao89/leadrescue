@@ -7,10 +7,7 @@ vi.mock("next/cache", () => ({
 }));
 
 import { initiateCsvImportAction } from "@/features/imports/actions";
-import {
-  fetchWorkspaceLeadsKeyset,
-  fetchLeadByIdAction,
-} from "@/features/leads/actions";
+import { fetchWorkspaceLeadsKeyset } from "@/features/leads/actions";
 import {
   runAgentEvaluationAction,
   executeAgentPlanAction,
@@ -65,8 +62,12 @@ describe("Akhi Codes Real Dataset: 10 Messy Stalled Client Threads", () => {
 
     const rohanEval = await runAgentEvaluationAction({ leadId: rohan!.id });
     expect(rohanEval.success).toBe(true);
-    expect(rohanEval.data!.assessment.churnRiskScore).toBeGreaterThanOrEqual(75);
-    expect(["HIGH", "CRITICAL"]).toContain(rohanEval.data!.assessment.churnRisk);
+    expect(rohanEval.data!.assessment.churnRiskScore).toBeGreaterThanOrEqual(
+      75,
+    );
+    expect(["HIGH", "CRITICAL"]).toContain(
+      rohanEval.data!.assessment.churnRisk,
+    );
     expect([
       "AUTHORITY_HIERARCHY",
       "TIMING_GHOSTING",
@@ -79,7 +80,9 @@ describe("Akhi Codes Real Dataset: 10 Messy Stalled Client Threads", () => {
 
     const kavitaEval = await runAgentEvaluationAction({ leadId: kavita!.id });
     expect(kavitaEval.success).toBe(true);
-    expect(kavitaEval.data!.assessment.churnRiskScore).toBeGreaterThanOrEqual(70);
+    expect(kavitaEval.data!.assessment.churnRiskScore).toBeGreaterThanOrEqual(
+      70,
+    );
 
     // TEST LEAD 3: Alex Rivera (Telegram, crypto dashboard, Eastern Europe dev $1.5k comparison)
     const alex = dir.leads.find((l) => l.firstName === "Alex");
