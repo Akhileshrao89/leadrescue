@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getActiveWorkspaceForUser } from "@/features/workspaces/server";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
 import { runAutonomousAgentEvaluation } from "./engine";
 import { executeAgentPlan, ExecuteAgentPlanResult } from "./tools";
 import { AgentActionPlan, AgentRunResult } from "./types";
@@ -25,9 +26,12 @@ export async function runAgentEvaluationAction(params: {
     }
 
     const supabase = await createServerSupabaseClient();
+    const isDemo =
+      !supabase ||
+      activeWs.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id;
     let lead: Lead | undefined;
 
-    if (supabase) {
+    if (!isDemo && supabase) {
       const { data, error } = await supabase
         .from("leads")
         .select("*")
@@ -42,10 +46,6 @@ export async function runAgentEvaluationAction(params: {
       }
       lead = data as Lead;
     } else {
-      // Demo data is only a local-development fallback. Never trust caller-supplied lead data.
-      if (process.env.NODE_ENV === "production") {
-        return { success: false, error: "Database is not configured." };
-      }
       lead = demoStore.getLead(params.leadId);
       if (!lead || lead.workspaceId !== activeWs.workspace.id) {
         return {
@@ -93,7 +93,10 @@ export async function executeAgentPlanAction(params: {
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase && process.env.NODE_ENV === "production") {
+  const isDemo =
+    !supabase || activeWs.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id;
+
+  if (!supabase && !isDemo && process.env.NODE_ENV === "production") {
     return {
       success: false,
       stageUpdated: false,
@@ -104,7 +107,7 @@ export async function executeAgentPlanAction(params: {
   }
 
   let lead: Lead | undefined;
-  if (supabase) {
+  if (!isDemo && supabase) {
     const { data, error } = await supabase
       .from("leads")
       .select(
@@ -154,7 +157,7 @@ export async function executeAgentPlanAction(params: {
   const trustedPlan = trustedEvaluation.plan;
 
   return executeAgentPlan({
-    supabase,
+    supabase: isDemo ? null : supabase,
     workspaceId: activeWs.workspace.id,
     leadId: lead.id,
     userId: activeWs.user.id,

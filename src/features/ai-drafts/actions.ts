@@ -2,6 +2,9 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "@/features/workspaces/rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
+import { demoStore } from "@/features/leads/demo-store";
+import { generateDeterministicTemplate } from "./templates";
 import { GenerateDraftInputSchema, GenerateDraftInputValues } from "./schema";
 import { generateFollowUpDraft } from "./service";
 import { getWorkspaceAiQuota } from "./quotas";
@@ -69,8 +72,27 @@ export async function generateFollowUpDraftAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { success: false, error: "Database client unavailable." };
+  if (!supabase || workspaceId === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    const lead = demoStore.getLead(leadId);
+    if (!lead) {
+      return { success: false, error: "Lead not found in demo workspace." };
+    }
+    const template = generateDeterministicTemplate(touchpointType, tone, {
+      firstName: lead.firstName,
+      companyName: lead.companyName,
+      senderAgencyName: authResult.context.workspace.name,
+      senderName: authResult.context.user.fullName || "Alex Vance",
+    });
+    return {
+      success: true,
+      data: {
+        subject: template.subject,
+        body: template.body,
+        isAiGenerated: false,
+        quotaRemaining: 236,
+        generationDurationMs: 15,
+      },
+    };
   }
 
   const result = await generateFollowUpDraft(supabase, {
@@ -120,8 +142,16 @@ export async function fetchDraftQuotaAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { success: false, error: "Database client unavailable." };
+  if (!supabase || targetWsId === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    return {
+      success: true,
+      data: {
+        quota: 250,
+        used: 14,
+        remaining: 236,
+        tier: "AGENCY",
+      },
+    };
   }
 
   const quota = await getWorkspaceAiQuota(supabase, targetWsId);

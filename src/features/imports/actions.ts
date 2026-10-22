@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "@/features/workspaces/rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
 import { parseCsv, serializeCsv, MAX_CSV_FILE_SIZE, MAX_CSV_ROWS } from "./csv";
 import {
   executeCsvIngestion,
@@ -83,7 +84,10 @@ export async function initiateCsvImportAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const { workspace, user } = authResult.context;
     let successfulRows = 0;
     let failedRows = 0;
@@ -382,7 +386,11 @@ export async function fetchImportJobsAction(): Promise<{
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return { jobs: [] };
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  )
+    return { jobs: [] };
 
   const { workspace } = authResult.context;
 
@@ -442,7 +450,11 @@ export async function fetchImportJobErrorsAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return { errors: [] };
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  )
+    return { errors: [] };
 
   const { data, error } = await supabase
     .from("import_row_results")

@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "@/features/workspaces/rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
 import { runOutboxWorkerTick } from "./runner";
 import {
   fetchWorkspaceReminders,
@@ -35,7 +36,10 @@ export async function fetchUpcomingRemindersAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const reminders = demoStore.listReminders(options);
     return { success: true, data: reminders };
   }
@@ -70,7 +74,7 @@ export async function scheduleReminderAction(
   const supabase = await createServerSupabaseClient();
   const { workspace, user } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const lead = demoStore.getLead(leadId);
     if (!lead) return { success: false, error: "Lead not found in workspace" };
     const res = demoStore.scheduleReminder({
@@ -147,7 +151,10 @@ export async function cancelReminderAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     demoStore.cancelReminder(reminderId);
     revalidatePath("/dashboard");
     return { success: true };
@@ -191,7 +198,10 @@ export async function triggerWorkerTickAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const result = await runOutboxWorkerTick({
       batchSize,
     });

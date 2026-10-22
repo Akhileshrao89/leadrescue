@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "@/features/workspaces/rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
 import {
   LeadFormSchema,
   type LeadFormValues,
@@ -124,7 +125,7 @@ export async function createLeadAction(
   const { workspace, user } = authResult.context;
   const input = validation.data;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     // In-memory demo mode fallback
     if (input.email) {
       const existing = demoStore
@@ -329,7 +330,7 @@ export async function updateLeadAction(
   const { workspace, user } = authResult.context;
   const data = validation.data;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found or inaccessible." };
@@ -529,7 +530,7 @@ export async function updateLeadStageAction(
   const supabase = await createServerSupabaseClient();
   const { workspace, user } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -659,7 +660,7 @@ export async function completeFollowUpAction(
   const supabase = await createServerSupabaseClient();
   const { workspace, user } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -816,7 +817,7 @@ export async function rescheduleFollowUpAction(
   const supabase = await createServerSupabaseClient();
   const { workspace, user } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -933,7 +934,7 @@ export async function addLeadNoteAction(
   const supabase = await createServerSupabaseClient();
   const { workspace, user } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -999,7 +1000,7 @@ export async function deleteLeadAction(
   const supabase = await createServerSupabaseClient();
   const { workspace } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -1067,7 +1068,7 @@ export async function archiveLeadAction(
   const supabase = await createServerSupabaseClient();
   const { workspace } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -1120,7 +1121,7 @@ export async function unarchiveLeadAction(
   const supabase = await createServerSupabaseClient();
   const { workspace } = authResult.context;
 
-  if (!supabase) {
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
     const existing = demoStore.getLead(leadId);
     if (!existing) {
       return { success: false, error: "Lead not found in active workspace." };
@@ -1170,7 +1171,10 @@ export async function fetchLeadByIdAction(leadId: string): Promise<{
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const lead = demoStore.getLead(leadId) || null;
     const activities = lead ? demoStore.getActivities(leadId) : [];
     return {
@@ -1242,7 +1246,10 @@ export async function fetchWorkspaceLeads(options: {
   if (!authResult.authorized) return { leads: [] };
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const res = demoStore.listLeads({
       search: options.search,
       stage: options.stage,
@@ -1343,7 +1350,10 @@ export async function fetchWorkspaceLeadsKeyset(
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) {
+  if (
+    !supabase ||
+    authResult.context.workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id
+  ) {
     const demoResult = demoStore.listLeads({
       search: options.search,
       stage: options.stage,

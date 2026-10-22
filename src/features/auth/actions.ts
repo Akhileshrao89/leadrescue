@@ -36,6 +36,7 @@ const SignUpSchema = z
 
 export type AuthActionResult = {
   success?: boolean;
+  message?: string;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -197,6 +198,14 @@ export async function signUpAction(
       console.error("Workspace initialization RPC error:", rpcError);
       // Fallback: If RPC is not yet created, attempt direct insert if permissions allow
     }
+  }
+
+  if (authData.user && !authData.session) {
+    return {
+      success: true,
+      message:
+        "Registration successful! Please check your email inbox to verify your account before logging in.",
+    };
   }
 
   redirect("/dashboard");

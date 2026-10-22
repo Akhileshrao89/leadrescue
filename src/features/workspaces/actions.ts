@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "./rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "./constants";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -48,12 +49,14 @@ export async function updateWorkspaceSettingsAction(
     return { error: authResult.error };
   }
 
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { error: "Database unavailable" };
-  }
-
   const targetWorkspaceId = authResult.context.workspace.id;
+
+  const supabase = await createServerSupabaseClient();
+  if (!supabase || targetWorkspaceId === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard");
+    return { success: true };
+  }
 
   const { error: updateError } = await supabase
     .from("workspaces")
@@ -91,12 +94,12 @@ export async function deleteWorkspaceAction(
     return { error: authResult.error };
   }
 
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { error: "Database unavailable" };
-  }
-
   const targetWorkspaceId = authResult.context.workspace.id;
+
+  const supabase = await createServerSupabaseClient();
+  if (!supabase || targetWorkspaceId === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    return { error: "Demo workspace cannot be deleted." };
+  }
 
   const { error: deleteError } = await supabase
     .from("workspaces")

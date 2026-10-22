@@ -19,8 +19,7 @@ describe("outbox cron endpoint authentication", () => {
   });
 
   it("fails closed when production has no CRON_SECRET", async () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV =
-      "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     delete process.env.CRON_SECRET;
 
     const response = await GET(
@@ -31,8 +30,7 @@ describe("outbox cron endpoint authentication", () => {
   });
 
   it("rejects requests with an invalid production bearer token", async () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV =
-      "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     process.env.CRON_SECRET = "test-only-secret";
 
     const response = await GET(

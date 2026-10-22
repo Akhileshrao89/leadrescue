@@ -1,41 +1,26 @@
+import { cookies } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  type ActiveWorkspaceContext,
+  DEMO_WORKSPACE_CONTEXT,
+} from "./constants";
 
-export interface ActiveWorkspaceContext {
-  user: {
-    id: string;
-    email: string;
-    fullName?: string;
-  };
-  workspace: {
-    id: string;
-    name: string;
-    slug: string;
-    timezone: string;
-  };
-  role: "OWNER" | "ADMIN" | "MEMBER";
-}
-
-export const DEMO_WORKSPACE_CONTEXT: ActiveWorkspaceContext = {
-  user: {
-    id: "usr_demo_agency_owner",
-    email: "owner@apexstudios.example.com",
-    fullName: "Alex Vance",
-  },
-  workspace: {
-    id: "ws_demo_agency",
-    name: "Apex Web & SEO Studio",
-    slug: "apex-studios",
-    timezone: "America/New_York",
-  },
-  role: "OWNER",
-};
+export * from "./constants";
 
 /**
  * Resolves the authenticated user's active workspace and membership role server-side.
  * Strictly verifies identity via Supabase Auth and database membership checks.
- * Falls back to local agency owner demo context when running in unconfigured dev environment.
+ * Falls back to local agency owner demo context when running in unconfigured dev environment or demo session.
  */
 export async function getActiveWorkspaceForUser(): Promise<ActiveWorkspaceContext | null> {
+  let isDemoSession = false;
+  try {
+    const cookieStore = await cookies();
+    isDemoSession = cookieStore.get("leadrescue_demo")?.value === "true";
+  } catch {
+    // In background workers or isolated contexts where cookies() is unavailable
+  }
+
   const supabase = await createServerSupabaseClient();
   if (!supabase) {
     return DEMO_WORKSPACE_CONTEXT;
@@ -45,7 +30,12 @@ export async function getActiveWorkspaceForUser(): Promise<ActiveWorkspaceContex
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !user.email) return null;
+  if (!user || !user.email) {
+    if (isDemoSession) {
+      return DEMO_WORKSPACE_CONTEXT;
+    }
+    return null;
+  }
 
   // Query first active membership for this user, including workspace metadata
   const { data: membership, error } = await supabase
@@ -56,6 +46,9 @@ export async function getActiveWorkspaceForUser(): Promise<ActiveWorkspaceContex
     .single();
 
   if (error || !membership || !membership.workspace) {
+    if (isDemoSession) {
+      return DEMO_WORKSPACE_CONTEXT;
+    }
     return null;
   }
 

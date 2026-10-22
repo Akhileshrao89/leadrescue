@@ -41,6 +41,18 @@ export default function SignupPage() {
           </CardHeader>
 
           <CardContent>
+            {state?.message && (
+              <Alert className="mb-4 border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200">
+                <AlertTitle>Account Created</AlertTitle>
+                <AlertDescription>
+                  {state.message}{" "}
+                  <Link href="/login" className="underline font-semibold ml-1">
+                    Proceed to Sign In &rarr;
+                  </Link>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {state?.error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertTitle>Registration Failed</AlertTitle>

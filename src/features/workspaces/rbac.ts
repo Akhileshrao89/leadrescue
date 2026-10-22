@@ -1,9 +1,9 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   type ActiveWorkspaceContext,
-  getActiveWorkspaceForUser,
   DEMO_WORKSPACE_CONTEXT,
-} from "./server";
+} from "./constants";
+import { getActiveWorkspaceForUser } from "./server";
 
 export type UserRole = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -139,57 +139,61 @@ export async function verifyWorkspaceMembership(
   let context: ActiveWorkspaceContext | null = null;
 
   if (options.workspaceId) {
-    const supabase = await createServerSupabaseClient();
-    if (!supabase) {
+    if (options.workspaceId === DEMO_WORKSPACE_CONTEXT.workspace.id) {
       context = DEMO_WORKSPACE_CONTEXT;
     } else {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const supabase = await createServerSupabaseClient();
+      if (!supabase) {
+        context = DEMO_WORKSPACE_CONTEXT;
+      } else {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user || !user.email) {
-        return {
-          authorized: false,
-          error: "Unauthorized: Valid session required",
-          statusCode: 401,
+        if (!user || !user.email) {
+          return {
+            authorized: false,
+            error: "Unauthorized: Valid session required",
+            statusCode: 401,
+          };
+        }
+
+        // Specifically verify membership in the requested workspace (prevents cross-tenant IDOR)
+        const { data: membership, error } = await supabase
+          .from("memberships")
+          .select("role, workspace:workspaces(id, name, slug, timezone)")
+          .eq("workspace_id", options.workspaceId)
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
+
+        if (error || !membership || !membership.workspace) {
+          return {
+            authorized: false,
+            error: "Forbidden: You are not a member of this workspace.",
+            statusCode: 403,
+          };
+        }
+
+        const ws = Array.isArray(membership.workspace)
+          ? membership.workspace[0]
+          : membership.workspace;
+
+        context = {
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: (user.user_metadata?.full_name as string) || undefined,
+          },
+          workspace: {
+            id: ws.id,
+            name: ws.name,
+            slug: ws.slug,
+            timezone: ws.timezone || "UTC",
+          },
+          role: membership.role as UserRole,
         };
       }
-
-      // Specifically verify membership in the requested workspace (prevents cross-tenant IDOR)
-      const { data: membership, error } = await supabase
-        .from("memberships")
-        .select("role, workspace:workspaces(id, name, slug, timezone)")
-        .eq("workspace_id", options.workspaceId)
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
-
-      if (error || !membership || !membership.workspace) {
-        return {
-          authorized: false,
-          error: "Forbidden: You are not a member of this workspace.",
-          statusCode: 403,
-        };
-      }
-
-      const ws = Array.isArray(membership.workspace)
-        ? membership.workspace[0]
-        : membership.workspace;
-
-      context = {
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: (user.user_metadata?.full_name as string) || undefined,
-        },
-        workspace: {
-          id: ws.id,
-          name: ws.name,
-          slug: ws.slug,
-          timezone: ws.timezone || "UTC",
-        },
-        role: membership.role as UserRole,
-      };
     }
   } else {
     context = await getActiveWorkspaceForUser();

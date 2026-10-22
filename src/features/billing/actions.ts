@@ -2,6 +2,8 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { verifyWorkspaceMembership } from "@/features/workspaces/rbac";
+import { DEMO_WORKSPACE_CONTEXT } from "@/features/workspaces/constants";
+import { demoStore } from "@/features/leads/demo-store";
 import { SubscriptionTier, SubscriptionStatus, getPlanByTier } from "./plans";
 import {
   createStripeCheckoutSession,
@@ -44,12 +46,27 @@ export async function fetchSubscriptionAction(): Promise<FetchSubscriptionResult
     return { success: false, error: authResult.error };
   }
 
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { success: false, error: "Database not configured." };
-  }
-
   const { workspace } = authResult.context;
+
+  const supabase = await createServerSupabaseClient();
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    const demoLeads = demoStore.listLeads({ limit: 1000 }).leads;
+    return {
+      success: true,
+      subscription: {
+        tier: "AGENCY",
+        status: "ACTIVE",
+        maxActiveLeads: 500,
+        maxMembers: 5,
+        aiDraftsUsed: 14,
+        monthlyAiDraftsQuota: 250,
+        activeLeadsCount: demoLeads.length,
+        currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
+        externalCustomerId: null,
+        externalSubscriptionId: null,
+      },
+    };
+  }
 
   // 1. Fetch subscription record
   const { data: sub, error: subError } = await supabase
@@ -148,12 +165,15 @@ export async function createBillingPortalAction(): Promise<BillingPortalResult> 
     return { success: false, error: authResult.error };
   }
 
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return { success: false, error: "Database not configured." };
-  }
-
   const { workspace } = authResult.context;
+
+  const supabase = await createServerSupabaseClient();
+  if (!supabase || workspace.id === DEMO_WORKSPACE_CONTEXT.workspace.id) {
+    return {
+      success: false,
+      error: "Billing portal is disabled in demo mode.",
+    };
+  }
 
   const { data: sub } = await supabase
     .from("subscriptions")

@@ -19,8 +19,7 @@ describe("email transport production safety", () => {
   });
 
   it("does not report mock delivery as success in production", async () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV =
-      "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     delete process.env.VITEST;
     delete process.env.RESEND_API_KEY;
     process.env.EMAIL_TRANSPORT_MODE = "mock";
