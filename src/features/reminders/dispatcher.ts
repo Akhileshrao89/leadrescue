@@ -2,6 +2,15 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { OutboxEvent, SendReminderPayload } from "./types";
 import { sendTransactionalEmail } from "./email-transporter";
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Handles processing of a claimed outbox event based on its job_type.
  */
@@ -90,8 +99,10 @@ async function handleSendReminderJob(
   const leadFullName = [lead.first_name, lead.last_name]
     .filter(Boolean)
     .join(" ");
-  const leadSubject = leadFullName ? `${leadFullName}` : "New Lead";
-  const companyInfo = lead.company_name ? ` (${lead.company_name})` : "";
+  const leadSubject = escapeHtml(leadFullName || "New Lead");
+  const companyInfo = lead.company_name
+    ? ` (${escapeHtml(lead.company_name)})`
+    : "";
   const leadUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/leads/${lead.id}`;
 
   const emailResult = await sendTransactionalEmail({

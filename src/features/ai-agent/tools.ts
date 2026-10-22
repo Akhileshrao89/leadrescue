@@ -55,7 +55,7 @@ export async function executeAgentPlan(
   if (!supabase) {
     // Demo Mode execution against mutable demoStore
     const lead = demoStore.getLead(leadId);
-    if (lead) {
+    if (lead && lead.workspaceId === workspaceId) {
       demoStore.updateLead(leadId, {
         stage: plan.recommendedStage,
         nextFollowUpAt: dueAt.toISOString(),
@@ -90,10 +90,13 @@ export async function executeAgentPlan(
       });
       activityLogged = true;
     } else {
-      stageUpdated = true;
-      reminderScheduled = true;
-      reminderId = `rem_demo_agent_${Date.now()}`;
-      activityLogged = true;
+      return {
+        success: false,
+        stageUpdated: false,
+        reminderScheduled: false,
+        activityLogged: false,
+        error: "Lead not found in demo workspace; no action was executed.",
+      };
     }
 
     logger.audit({
@@ -118,7 +121,7 @@ export async function executeAgentPlan(
 
   try {
     // 1. Update lead stage and next_follow_up_at
-    const { error: stageErr } = await supabase
+    const { data: updatedLead, error: stageErr } = await supabase
       .from("leads")
       .update({
         stage: plan.recommendedStage,
@@ -126,9 +129,23 @@ export async function executeAgentPlan(
         updated_at: new Date().toISOString(),
       })
       .eq("id", leadId)
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
+      .select("id")
+      .maybeSingle();
 
-    if (!stageErr) stageUpdated = true;
+    if (stageErr || !updatedLead) {
+      return {
+        success: false,
+        stageUpdated: false,
+        reminderScheduled: false,
+        activityLogged: false,
+        error: `Lead stage update failed: ${
+          stageErr?.message ||
+          "Lead not found or not updated in this workspace."
+        }`,
+      };
+    }
+    stageUpdated = true;
 
     // 2. Schedule follow-up reminder in outbox
     const reminderRes = await scheduleReminderForLead(supabase, {
@@ -141,10 +158,17 @@ export async function executeAgentPlan(
       companyName,
     });
 
-    if (reminderRes.success) {
-      reminderScheduled = true;
-      reminderId = reminderRes.reminderId;
+    if (!reminderRes.success) {
+      return {
+        success: false,
+        stageUpdated,
+        reminderScheduled: false,
+        activityLogged: false,
+        error: reminderRes.error || "Reminder scheduling failed.",
+      };
     }
+    reminderScheduled = true;
+    reminderId = reminderRes.reminderId;
 
     // 3. Log agent strategy in activity_logs
     const { error: actErr } = await supabase.from("activity_logs").insert({
@@ -152,7 +176,9 @@ export async function executeAgentPlan(
       lead_id: leadId,
       user_id: userId,
       activity_type: "STAGE_CHANGED",
-      notes: `[AI Autonomous Agent] Executed strategy: ${plan.reasoningTrace[plan.reasoningTrace.length - 1]} | Scheduled next touchpoint in ${plan.followUpOffsetDays} days.`,
+      notes: `[AI Lead Assistant] Executed strategy: ${
+        plan.reasoningTrace[plan.reasoningTrace.length - 1]
+      } | Scheduled next touchpoint in ${plan.followUpOffsetDays} days.`,
     });
 
     if (!actErr) activityLogged = true;
@@ -170,11 +196,17 @@ export async function executeAgentPlan(
     });
 
     return {
-      success: true,
+      success: stageUpdated && reminderScheduled && activityLogged,
       stageUpdated,
       reminderScheduled,
       reminderId,
       activityLogged,
+      ...(!(stageUpdated && reminderScheduled && activityLogged)
+        ? {
+            error:
+              "Agent plan partially executed; inspect the individual operation statuses.",
+          }
+        : {}),
     };
   } catch (err) {
     logger.error("Failed to execute agent plan", { error: String(err) });

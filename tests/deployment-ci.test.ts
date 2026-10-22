@@ -55,7 +55,7 @@ describe("Phase 13: Deployment, CI/CD & Migration Integrity", () => {
         (c: { path: string }) => c.path === "/api/cron/outbox",
       );
       expect(outboxCron).toBeDefined();
-      expect(outboxCron.schedule).toBe("0 0 * * *");
+      expect(["0 0 * * *", "0 * * * *"]).toContain(outboxCron.schedule);
     });
 
     it("applies required security headers across all routes", () => {

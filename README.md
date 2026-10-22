@@ -39,7 +39,7 @@ Instead of a generic CRM or a passive reminder list, LeadRescue operates as a tr
 3. **Durable Transactional Outbox**: Follow-up reminders are inserted as pending outbox events within the same database transaction. The background worker claims ready events using `FOR UPDATE SKIP LOCKED` lease-locking to prevent duplicate sends across concurrent instances.
 4. **Resilient Retry & Backoff**: Upstream email delivery failures (e.g., SMTP drops, API limits) automatically increment attempt counters and reschedule the event using exponential backoff with randomized jitter (`available_at = now + 2^attempt * base + jitter`).
 5. **Keyset Cursor Pagination**: Directory queries use index-backed composite seeks `(created_at, id)` instead of high-latency `OFFSET` queries, guaranteeing $O(1)$ page fetches even at high record volume.
-6. **Dual Hosting Support**: Native deployment support for both **Firebase App Hosting** (`apphosting.yaml`, `firebase.json` Next.js SSR runtime) and **Vercel** (`vercel.json` 1-minute cron triggers).
+6. **Dual Hosting Support**: Deployment configuration for **Firebase App Hosting** and **Vercel**. Reminder latency depends on the configured scheduler and hosting plan; verify the deployed cron cadence before promising timely delivery.
 
 ---
 
@@ -51,7 +51,7 @@ Instead of a generic CRM or a passive reminder list, LeadRescue operates as a tr
 - **Database & Auth**: PostgreSQL (Supabase) with RLS + SSR Cookie Auth
 - **Validation**: Zod schema validation on all inputs, CSV rows, and webhook payloads
 - **Email Provider**: Resend API
-- **Testing**: Vitest (40 test files, 267 unit/integration tests)
+- **Testing**: Vitest (run `npm test` for the current result; counts are not release evidence until CI passes)
 - **Code Quality**: ESLint 9 + Prettier
 
 ---
@@ -93,7 +93,7 @@ EMAIL_FROM="LeadRescue <onboarding@resend.dev>"
 CRON_SECRET="your-secure-cron-secret"
 ```
 
-> **Zero-Config Demo Mode**: If external Supabase keys are left unset, the application automatically boots into in-memory persistence mode (`demoStore`), allowing full testing of CSV imports, pagination, lead editing, agent recommendations, and outbox worker ticks without external dependencies.
+> **Local Demo Mode**: If Supabase is not configured, the app can use in-memory demo data for local exploration. Demo changes are not durable and this mode must not be used for production customer data.
 
 ### 3. Run Database Migrations
 
@@ -158,7 +158,7 @@ firebase deploy
 
 ### Vercel
 
-Includes `vercel.json` with a 1-minute cron worker calling `/api/cron/outbox`:
+Includes `vercel.json` with an hourly cron worker calling `/api/cron/outbox`. Confirm your Vercel plan supports the configured cadence. For near-real-time reminders, use a supported frequent cron or a dedicated worker; do not assume an hourly cron is immediate:
 
 ```bash
 vercel --prod

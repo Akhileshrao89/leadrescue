@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { runAutonomousAgentEvaluation } from "@/features/ai-agent/engine";
 import { executeAgentPlan } from "@/features/ai-agent/tools";
 import { Lead } from "@/features/leads/types";
+import { demoStore } from "@/features/leads/demo-store";
 
 describe("Agentic AI: Autonomous Cognitive Reasoning & Tool Execution Engine", () => {
   const baseLead: Lead = {
@@ -29,7 +30,9 @@ describe("Agentic AI: Autonomous Cognitive Reasoning & Tool Execution Engine", (
     });
 
     expect(result.leadId).toBe("lead_agent_1");
-    expect(result.confidenceScore).toBeGreaterThanOrEqual(80);
+    expect(result.confidenceScore).toBeGreaterThanOrEqual(50);
+    expect(result.confidenceScore).toBeLessThanOrEqual(85);
+    expect(result.tokensConsumed).toBe(0);
     expect(result.assessment.recommendedTactic).toContain("Speed-to-Lead");
     expect(result.plan.recommendedStage).toBe("CONTACTED");
     expect(result.plan.suggestedSubject).toContain("Vance Capital");
@@ -82,6 +85,7 @@ describe("Agentic AI: Autonomous Cognitive Reasoning & Tool Execution Engine", (
   });
 
   it("executes the autonomous agent plan seamlessly in demo mode", async () => {
+    demoStore.reset([baseLead]);
     const evalResult = runAutonomousAgentEvaluation({
       lead: baseLead,
       workspaceName: "Apex Digital",
@@ -90,7 +94,7 @@ describe("Agentic AI: Autonomous Cognitive Reasoning & Tool Execution Engine", (
 
     const execution = await executeAgentPlan({
       supabase: null, // Demo mode fallback
-      workspaceId: "ws_demo",
+      workspaceId: "ws_agency_1",
       leadId: baseLead.id,
       userId: "usr_agent_runner",
       plan: evalResult.plan,

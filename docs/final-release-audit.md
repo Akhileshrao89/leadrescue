@@ -1,4 +1,6 @@
-# LeadRescue — Final Release Engineering Audit & Sign-Off
+# LeadRescue — Historical Release Audit Notes
+
+> **Important status correction (2026-10-22):** This document is a repository-authored historical self-assessment, not an independent production sign-off. The current source review identified security and reliability issues that contradict parts of the claims below. Treat all prior “Verified”, “Approved”, test-count, performance, and cost statements as **unverified until reproduced by current CI and a staging/live verification run**. Do not use this document as evidence that the current deployment is production-ready.
 
 > **Document Version**: 1.0.0  
 > **Release Target**: Production Release 1.0  

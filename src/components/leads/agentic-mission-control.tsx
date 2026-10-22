@@ -125,7 +125,7 @@ export function AgenticMissionControl({
             </div>
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <span>Autonomous Re-Engagement Agent</span>
+                <span>Lead Risk & Follow-up Assistant</span>
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -282,11 +282,11 @@ export function AgenticMissionControl({
 
       <CardFooter className="pt-0 flex items-center justify-between border-t border-indigo-50 dark:border-indigo-950/40 p-4">
         <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
-          <span>Confidence:</span>
+          <span>Heuristic score (not calibrated):</span>
           <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-            {result?.confidenceScore || 92}%
+            {result ? `${result.confidenceScore}%` : "—"}
           </span>
-          <span>• Single-click autonomous execution</span>
+          <span>• One-click execution of a rule-based recommendation</span>
         </div>
 
         <Button

@@ -63,20 +63,25 @@ export async function handleStripeWebhookEvent(
         const customerId = (obj.customer as string) || null;
         const subscriptionId = (obj.subscription as string) || null;
 
-        await supabase.from("subscriptions").upsert(
-          {
-            workspace_id: workspaceId,
-            tier: plan.tier,
-            status: "ACTIVE",
-            max_active_leads: plan.maxActiveLeads,
-            max_members: plan.maxMembers,
-            monthly_ai_drafts_quota: plan.monthlyAiDraftsQuota,
-            external_customer_id: customerId,
-            external_subscription_id: subscriptionId,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "workspace_id" },
-        );
+        const { error: upsertError } = await supabase
+          .from("subscriptions")
+          .upsert(
+            {
+              workspace_id: workspaceId,
+              tier: plan.tier,
+              status: "ACTIVE",
+              max_active_leads: plan.maxActiveLeads,
+              max_members: plan.maxMembers,
+              monthly_ai_drafts_quota: plan.monthlyAiDraftsQuota,
+              external_customer_id: customerId,
+              external_subscription_id: subscriptionId,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "workspace_id" },
+          );
+        if (upsertError) {
+          throw new Error(`Subscription upsert failed: ${upsertError.message}`);
+        }
 
         markEventAsProcessed(event.id);
         return { success: true, handled: true };
@@ -127,10 +132,13 @@ export async function handleStripeWebhookEvent(
         if (periodStart) updatePayload.current_period_start = periodStart;
         if (periodEnd) updatePayload.current_period_end = periodEnd;
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("subscriptions")
           .update(updatePayload)
           .eq("external_subscription_id", subId);
+        if (updateError) {
+          throw new Error(`Subscription update failed: ${updateError.message}`);
+        }
 
         markEventAsProcessed(event.id);
         return { success: true, handled: true };
@@ -141,7 +149,7 @@ export async function handleStripeWebhookEvent(
         // Downgrade to FREE plan gracefully without deleting user data
         const freePlan = PLANS.FREE;
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("subscriptions")
           .update({
             tier: freePlan.tier,
@@ -152,6 +160,11 @@ export async function handleStripeWebhookEvent(
             updated_at: new Date().toISOString(),
           })
           .eq("external_subscription_id", subId);
+        if (updateError) {
+          throw new Error(
+            `Subscription cancellation update failed: ${updateError.message}`,
+          );
+        }
 
         markEventAsProcessed(event.id);
         return { success: true, handled: true };
@@ -161,7 +174,7 @@ export async function handleStripeWebhookEvent(
         const subId = (obj.subscription as string) || null;
         if (subId) {
           // Reset monthly AI draft usage on successful monthly invoice
-          await supabase
+          const { error: updateError } = await supabase
             .from("subscriptions")
             .update({
               status: "ACTIVE",
@@ -169,6 +182,11 @@ export async function handleStripeWebhookEvent(
               updated_at: new Date().toISOString(),
             })
             .eq("external_subscription_id", subId);
+          if (updateError) {
+            throw new Error(
+              `Payment-success update failed: ${updateError.message}`,
+            );
+          }
         }
 
         markEventAsProcessed(event.id);
@@ -178,13 +196,18 @@ export async function handleStripeWebhookEvent(
       case "invoice.payment_failed": {
         const subId = (obj.subscription as string) || null;
         if (subId) {
-          await supabase
+          const { error: updateError } = await supabase
             .from("subscriptions")
             .update({
               status: "PAST_DUE",
               updated_at: new Date().toISOString(),
             })
             .eq("external_subscription_id", subId);
+          if (updateError) {
+            throw new Error(
+              `Payment-failure update failed: ${updateError.message}`,
+            );
+          }
         }
 
         markEventAsProcessed(event.id);

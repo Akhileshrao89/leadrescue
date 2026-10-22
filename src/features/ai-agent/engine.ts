@@ -282,10 +282,11 @@ export function runAutonomousAgentEvaluation(
 
   return {
     leadId: lead.id,
-    confidenceScore: Math.max(88, 100 - Math.round(score * 0.15)),
+    // Heuristic score only; this is not a calibrated probability.
+    confidenceScore: Math.max(50, Math.min(85, 80 - Math.round(score * 0.15))),
     assessment,
     plan,
     executedAt: new Date().toISOString(),
-    tokensConsumed: 185,
+    tokensConsumed: 0, // This rule-based engine does not call an LLM.
   };
 }

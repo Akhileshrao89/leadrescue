@@ -30,9 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Environment files: only the sanitized template may be committed
+.env
+.env.*
 !.env.example
+*.local
+
+# Private keys and local credential files
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
 
 # vercel
 .vercel
@@ -40,4 +49,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
 .firebase

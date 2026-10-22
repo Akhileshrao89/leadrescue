@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // If webhook secret is configured, strictly enforce constant-time HMAC signature verification
+  // Verify the signature in constant time when a webhook secret is configured.
   if (webhookSecret) {
     const verification = verifyStripeWebhookSignature({
       rawBody,
@@ -61,11 +61,19 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminSupabaseClient();
   if (!supabase) {
-    // If Supabase is not configured (e.g. mock test environment), acknowledge receipt gracefully
+    // Never acknowledge a production payment event that was not persisted.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        {
+          error: "Billing database is not configured; event was not persisted.",
+        },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({
       received: true,
       event: event.type,
-      note: "Database client not configured; event acknowledged without persistence",
+      note: "Development/test only: database client is not configured.",
     });
   }
 

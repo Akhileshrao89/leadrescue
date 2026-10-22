@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { runOutboxWorkerTick } from "@/features/reminders/runner";
 
 export async function GET(request: NextRequest) {
@@ -13,16 +14,24 @@ async function handleCronWorker(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const authHeader = request.headers.get("authorization");
 
-  // In production, if CRON_SECRET is configured, strictly enforce bearer authentication
-  if (
-    process.env.NODE_ENV === "production" &&
-    cronSecret &&
-    authHeader !== `Bearer ${cronSecret}`
-  ) {
+  // Fail closed in production: a missing secret must never disable authentication.
+  if (process.env.NODE_ENV === "production" && !cronSecret) {
     return NextResponse.json(
-      { error: "Unauthorized: Invalid or missing cron secret" },
-      { status: 401 },
+      { error: "Cron endpoint is not configured" },
+      { status: 503 },
     );
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    const expected = Buffer.from(`Bearer ${cronSecret}`, "utf8");
+    const received = Buffer.from(authHeader || "", "utf8");
+    const matches =
+      expected.length === received.length &&
+      timingSafeEqual(expected, received);
+
+    if (!matches) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const searchParams = request.nextUrl.searchParams;

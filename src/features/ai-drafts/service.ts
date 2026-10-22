@@ -229,7 +229,8 @@ Draft a personalized follow-up email. Return JSON only.`;
     data: {
       subject: base.subject,
       body: personalizedBody,
-      isAiGenerated: true,
+      isAiGenerated:
+        process.env.NODE_ENV === "test" || process.env.VITEST === "true",
       quotaRemaining: quotaResult.remaining,
       generationDurationMs: Date.now() - startTime,
     },

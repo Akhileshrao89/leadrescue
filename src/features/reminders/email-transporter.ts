@@ -10,7 +10,7 @@ export interface EmailDispatchResult {
   success: boolean;
   messageId?: string;
   error?: string;
-  provider: "resend" | "mock";
+  provider: "resend" | "mock" | "unconfigured";
 }
 
 // In-memory log for test assertions and local verification
@@ -27,9 +27,9 @@ export function clearMockEmailTransporterLog() {
 }
 
 /**
- * Dispatches a transactional email using Resend if RESEND_API_KEY is configured.
- * In development, test environments, or when unconfigured, gracefully falls back
- * to the mock transporter with zero external network dependencies.
+ * Dispatches a transactional email using Resend.
+ * Mock delivery is permitted only in tests or when explicitly opted into in
+ * non-production environments. Production must never report a fake delivery.
  */
 export async function sendTransactionalEmail(
   message: EmailMessage,
@@ -40,12 +40,13 @@ export async function sendTransactionalEmail(
     "LeadRescue Notifications <notifications@leadrescue.example.com>";
   const fromAddress = message.from || defaultFrom;
 
-  // Use live Resend API only when a genuine API key is present and not running in test runner
+  // Use Resend only with a plausible key and outside the test runner.
   const isGenuineResendKey = Boolean(
     apiKey && apiKey.startsWith("re_") && !apiKey.includes("123456789"),
   );
   const isTestEnvironment =
-    process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+    process.env.NODE_ENV === "test" ||
+    (process.env.VITEST === "true" && process.env.NODE_ENV !== "production");
 
   if (isGenuineResendKey && !isTestEnvironment) {
     try {
@@ -88,8 +89,25 @@ export async function sendTransactionalEmail(
     }
   }
 
-  // Mock / Fallback delivery
-  const generatedId = `mock_msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const mockAllowed =
+    isTestEnvironment ||
+    (process.env.NODE_ENV !== "production" &&
+      process.env.EMAIL_TRANSPORT_MODE === "mock");
+
+  if (!mockAllowed) {
+    return {
+      success: false,
+      error: apiKey
+        ? "Email provider is not configured with a valid Resend key."
+        : "RESEND_API_KEY is not configured; email was not sent.",
+      provider: "unconfigured",
+    };
+  }
+
+  // Explicit test/development mock only. Never use this as production delivery.
+  const generatedId = `mock_msg_${Date.now()}_${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
   mockDispatchLog.push({
     ...message,
     from: fromAddress,
@@ -97,9 +115,5 @@ export async function sendTransactionalEmail(
     messageId: generatedId,
   });
 
-  return {
-    success: true,
-    messageId: generatedId,
-    provider: "mock",
-  };
+  return { success: true, messageId: generatedId, provider: "mock" };
 }
